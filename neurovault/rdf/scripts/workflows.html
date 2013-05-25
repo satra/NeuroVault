@@ -1,0 +1,110 @@
+## -*- coding: utf-8 -*- 
+<%inherit file="base.html" />
+
+<div class="alert alert-info">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <h4 class="alert-heading">Tip!</h4>
+    The search box autocompletes based on tags associated with the workflows.
+</div>
+<div class="row">
+    <div class="modal hide fade" id="myModal">
+        <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal">x</button>
+            <h3>Workflow Info</h3>
+        </div>
+        <div class="modal-body">
+            <h4>Workflow config</h4>
+            <pre id="jsonconfig">
+
+            </pre>
+            <h4>Workflow options</h4>
+            <pre id="workflowoptions">
+
+            </pre>
+        </div>
+        <div class="modal-footer">
+            <a href="#" class="btn" data-dismiss="modal">Close</a>
+        </div>
+    </div>
+    <div class="well-large">
+    <form id="wsearchform" class="form-inline" action="#" method="post">
+        <input id="wsearchinput" type="text" autocomplete="off" data-provide="typeahead" class="span11">
+        <button type="submit" class="btn"><i class="icon-search"></i></button>
+        <!-- The table listing the files available for upload/download -->
+    </form>
+
+    <table class="table table-striped span10">
+        <thead><tr><th>Info</th><th>UUID</th><th>Description</th></tr></thead>
+        <tbody id="wftable" class="files" data-toggle="modal-gallery" data-target="#modal-gallery">
+        </tbody>
+    </table>
+
+    <script type="text/javascript">
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function getworkflows() {
+            // Populate table with workflows with or without scripting
+            // post the form values via AJAX…
+            var postdata = {tags: $("#wsearchinput").val()} ;
+            $.post('/queryworkflows', postdata, function(data) {
+                // and set the title with the result
+                $("#wftable").empty();
+                for(var i=0;i<data.length;i++){
+                    var btninfo = "<a id=\"to_modal"+i+"\" href=\"./info?uuid="+data[i].uuid+"\"><i class=\"icon-info-sign\"></i></a>";
+                    //btninfo = "<a data-toggle=\"modal\" href=\"#myModal\"><i class=\"icon-info-sign\"></i></a>"
+                    var tdata = "<tr><td>"+btninfo+"</td><td><a href=\"./edit_config?uuid="+data[i].uuid+"\">"+data[i].uuid+"</a></td><td>"+data[i].desc+"</td></tr>";
+                    $("#wftable").append(tdata);
+                    $("#to_modal"+i).click(function(e) {
+                        e.preventDefault();
+                        var href = $(e.currentTarget).attr('href');
+                        $.getJSON(href, function(infodata) {
+                            $("#jsonconfig").empty();
+                            $("#jsonconfig")[0].innerHTML =
+                                    syntaxHighlight(JSON.stringify(infodata["jsonconfig"], null, 2));
+                            $("#workflowoptions").empty();
+                            $("#workflowoptions")[0].innerHTML =
+                                    syntaxHighlight(JSON.stringify(infodata["workflowconfig"], null, 2));
+                            $('#myModal').modal();
+                            });
+                    });
+                }
+                //$("#wftable").html(tdata);
+            });
+            return false ;
+        }
+        function setupTypeahead () {
+        var autocomplete = $('#wsearchinput').typeahead({
+            items: 10,
+            source: function(query, process){
+                return $.post('/tags', { query: query }, process);
+            }
+            })
+
+            // Attach get workflows to form submission
+            $("#wsearchform").submit(getworkflows);
+            // Call it during initialization
+            getworkflows();
+
+        }
+        window.onload = setupTypeahead;
+    </script>
+</div>
+</div>
+
