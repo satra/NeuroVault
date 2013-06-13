@@ -74,6 +74,14 @@ class BIPS(object):
         return demoTmpl.render()
 
     @expose
+    def testhandler(self, **kwargs):
+        print kwargs
+        myFile = kwargs['files[]'][0]
+        print myFile.filename
+        print dir(myFile)
+
+
+    @expose
     def imageuploadhandler(self, **kwargs):
         if 'files[]' not in kwargs:
             return

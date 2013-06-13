@@ -72,7 +72,7 @@
             // By default, each file of a selection is uploaded using an individual
             // request for XHR type uploads. Set to false to upload file
             // selections in one request each:
-            singleFileUploads: true,
+            singleFileUploads: false,
             // To limit the number of files uploaded with one XHR request,
             // set the following option to an integer greater than 0:
             limitMultiFileUploads: undefined,
@@ -1077,6 +1077,7 @@
                     return this._enhancePromise(promise);
                 }
                 data.files = $.makeArray(data.files);
+                console.log(data)
                 if (data.files.length) {
                     return this._onSend(null, data);
                 }
